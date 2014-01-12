@@ -7,7 +7,7 @@ use warnings;
 
 use Lingua::PTD;
 
-our @EXPORT_OK = qw(pss);
+our @EXPORT_OK = qw(pss pssml);
 
 =head1 NAME
 
@@ -15,28 +15,29 @@ Lingua::PTD::More - more things to do with PTD
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
     use Lingua::PTD;
-    use Lingua::PTD::More qw/pss/;
+    use Lingua::PTD::More qw/pss pssml/;
 
     my $ptdA = Lingua::PTD->new('ptd.en-pt.sqlite');
     my $ptdB = Lingua::PTD->new('ptd.en-pt.sqlite');
 
-    my $pss = pss($ptdA, $ptdB, $term);
+    my %pss = pss($ptdA, $ptdB, $term);
+    my %pssml = pssml($ptdA, $ptdB, $term);
 
 =head1 EXPORT
 
 =head2 pss
 
 Create a Probabilistic Synonymous Set (PSS) given a PTD pair and a term.
-The minimu probability cann be passed as an extra argument to this
+The minimum probability can be passed as an extra argument to this
 function.
 
 =cut
@@ -56,6 +57,28 @@ sub pss {
   }
 
   return %pss;
+}
+
+=head2 pssml
+
+Same as C<pss> function, but doesn't add translations to the PSS.
+
+=cut
+
+sub pssml {
+  my ($ptdA, $ptdB, $term, $minp) = @_;
+  $minp = 0.2 unless $minp;
+
+  my %pssml;
+  my %trans = $ptdA->transHash($term);
+  foreach (keys %trans) {
+    my %transI = $ptdB->transHash($_);
+    foreach my $j (keys %transI) {
+      $pssml{$j} = $transI{$j} if $transI{$j} >= $minp;
+    }
+  }
+
+  return %pssml;
 }
 
 =head1 AUTHOR
